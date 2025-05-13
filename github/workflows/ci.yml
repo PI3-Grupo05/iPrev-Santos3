@@ -1,0 +1,55 @@
+name: CI - Testes e Deploy
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: gonzae_processos_judiciais
+          MYSQL_USER: gonzae
+          MYSQL_PASSWORD: siaemicr
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli
+          coverage: xdebug
+
+      - name: Wait for MySQL to be ready
+        run: |
+          sudo apt-get install -y mysql-client
+          until mysql -h 127.0.0.1 -u gonzae -psiaemicr -e "SELECT 1" gonzae_processos_judiciais; do
+            echo "Aguardando MySQL..."
+            sleep 5
+          done
+
+      - name: Setup database schema
+        run: mysql -h 127.0.0.1 -u gonzae -psiaemicr gonzae_processos_judiciais < scripts/setup.sql
+
+      - name: Install dependencies
+        run: composer install
+
+      - name: Run PHPUnit with coverage
+        run: ./vendor/bin/phpunit testes
