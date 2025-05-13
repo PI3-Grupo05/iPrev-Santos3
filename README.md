@@ -44,5 +44,5 @@ O projeto foi desenvolvido como parte do Projeto Integrador em Computação I na
 
 ## Orientadora
 
-Karina Cristina Chiari
+Porf. Karina Cristina Chiari
 <br><br>
